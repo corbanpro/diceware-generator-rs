@@ -7,15 +7,9 @@ mod words;
 #[derive(Parser, Debug)]
 #[command(name = "dicew")]
 #[command(author = "Corban Procuniar <corbanpro@gmail.com>")]
-#[command(version = "1.0")]
+#[command(version = "1.0.1")]
 #[command(about = "generate diceware password", long_about = None)]
 struct Args {
-    #[arg(short = 's', long, default_value_t = false)]
-    allow_special_characters: bool,
-
-    #[arg(short = 'n', long, default_value_t = false)]
-    allow_numbers: bool,
-
     #[arg(value_name = "NUM WORDS", default_value_t = 5)]
     num_words: u8,
 }
@@ -34,40 +28,13 @@ fn main() {
         .collect();
     let words: HashMap<&str, &str> = HashMap::from_iter(lines);
 
-    let mut password = generate_password(&words, args.num_words);
-
-    while !password_valid(&password, args.allow_numbers, args.allow_special_characters) {
-        password = generate_password(&words, args.num_words)
-    }
+    let password = generate_password(&words, args.num_words);
 
     for word in &password {
         println!("{} ", word);
     }
 
     println!("\n{}", password.join(""));
-}
-
-fn password_valid(password: &[String], allow_numbers: bool, allow_special_characters: bool) -> bool {
-    let password = password.join("");
-
-    if !allow_numbers {
-        let numbers = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
-        if password.contains(|char| numbers.contains(&char)) {
-            return false;
-        }
-    }
-
-    if !allow_special_characters {
-        let special_characters = [
-            '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '-', '_', '+', '=', '{', '}', '[', ']', '|', '\\', ':',
-            ';', '"', '\'', '<', '>', ',', '.', '?', '/', '~',
-        ];
-        if password.contains(|char| special_characters.contains(&char)) {
-            return false;
-        }
-    }
-
-    true
 }
 
 fn generate_password(words: &HashMap<&str, &str>, num_words: u8) -> Vec<String> {

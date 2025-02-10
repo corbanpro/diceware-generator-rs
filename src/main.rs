@@ -1,5 +1,4 @@
 use clap::Parser;
-use rand::prelude::*;
 use std::collections::HashMap;
 use words::get_word_list;
 mod words;
@@ -14,7 +13,8 @@ struct Args {
     num_words: u8,
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let args = Args::parse();
     // make a diceware generator
     let input = get_word_list();
@@ -28,7 +28,7 @@ fn main() {
         .collect();
     let words: HashMap<&str, &str> = HashMap::from_iter(lines);
 
-    let password = generate_password(&words, args.num_words);
+    let password = generate_password(&words, args.num_words).await;
 
     for word in &password {
         println!("{} ", word);
@@ -37,14 +37,11 @@ fn main() {
     println!("\n{}", password.join(""));
 }
 
-fn generate_password(words: &HashMap<&str, &str>, num_words: u8) -> Vec<String> {
+async fn generate_password(words: &HashMap<&str, &str>, num_words: u8) -> Vec<String> {
     let mut password = vec![];
 
     for _ in 0..num_words {
-        let mut roll = String::new();
-        for _ in 0..5 {
-            roll += &roll_die().to_string()
-        }
+        let roll = roll_die().await;
         let word = words.get(roll.as_str()).unwrap();
         password.push(word.to_string());
     }
@@ -52,7 +49,13 @@ fn generate_password(words: &HashMap<&str, &str>, num_words: u8) -> Vec<String> 
     password
 }
 
-fn roll_die() -> u8 {
-    let mut rng = rand::rng();
-    rng.random_range(1..=6)
+async fn roll_die() -> String {
+    let url = "https://www.randomnumberapi.com/api/v1.0/random?min=1&max=6&count=5";
+    let response = reqwest::get(url).await.unwrap();
+    let rolls: Vec<i32> = response.json().await.unwrap();
+    rolls
+        .iter()
+        .map(|roll| roll.to_string())
+        .collect::<Vec<String>>()
+        .join("")
 }
